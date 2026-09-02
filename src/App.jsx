@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { HashRouter, NavLink, Route, Routes } from 'react-router-dom'
 import './App.css'
-import KanbanBoard from './components/KanbanBoard'
-import Dashboard from './pages/Dashboard'
+import KanbanBoard from './components/KanbanBoard.jsx'
+import Dashboard from './pages/Dashboard.jsx'
 
 const PEOPLE = [
   { id: 'p1', name: 'Kesuda' },

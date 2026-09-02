@@ -1,16 +1,6 @@
-import type { Category, ResponsiblePerson, Status, Task } from '../types'
-import { STATUS_LABELS } from '../types'
+import { STATUSES, STATUS_LABELS } from '../types.js'
 
-interface Props {
-  task: Task
-  categories: Category[]
-  persons: ResponsiblePerson[]
-  onMove: (status: Status) => void
-  onEdit: () => void
-  onDelete: () => void
-}
-
-export default function TaskCard({ task, categories, persons, onMove, onEdit, onDelete }: Props) {
+export default function TaskCard({ task, categories, persons, onMove, onEdit, onDelete }) {
   const category = categories.find((item) => item.id === task.categoryId)?.name || 'Uncategorized'
   const person = persons.find((item) => item.id === task.responsiblePersonId)?.name || 'Unassigned'
   const overdue = task.status !== 'DONE' && task.dueDate < new Date().toISOString().slice(0, 10)
@@ -22,7 +12,7 @@ export default function TaskCard({ task, categories, persons, onMove, onEdit, on
       <h3>{task.title}</h3>
       {task.description && <p>{task.description}</p>}
       <div className={`date-row ${overdue ? 'overdue' : ''}`}><span>◷</span><span>{overdue ? 'Overdue · ' : 'Due · '}{new Date(`${task.dueDate}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span></div>
-      <div className="card-footer"><span className="avatar" title={person}>{initials}</span><select aria-label={`Move ${task.title}`} value={task.status} onChange={(e) => onMove(e.target.value as Status)}>{(['TO_DO', 'DOING', 'DONE'] as Status[]).map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}</select></div>
+      <div className="card-footer"><span className="avatar" title={person}>{initials}</span><select aria-label={`Move ${task.title}`} value={task.status} onChange={(e) => onMove(e.target.value)}>{STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}</select></div>
     </article>
   )
 }

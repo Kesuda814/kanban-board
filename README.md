@@ -1,6 +1,6 @@
 # Kanban Board with Dashboard
 
-A React JS Kanban task-management application with a 3-column board and a live analytics dashboard, backed by Local Storage (no backend).
+A **JavaScript (JSX)** Kanban task-management application with a 3-column board and a live analytics dashboard, backed by Local Storage (no backend). No TypeScript is used.
 
 ## Live demo
 
@@ -19,9 +19,9 @@ A React JS Kanban task-management application with a 3-column board and a live a
 
 ### Dashboard
 - Summary cards: total, TO DO, DOING, DONE, and overdue counts
-- Task status chart (segmented bar)
-- Task category chart (horizontal bars)
-- Completion performance (Early / On Time / Late) donut chart
+- Task status doughnut chart
+- Task category bar chart
+- Completion performance doughnut (Early / On Time / Late)
 
 ## Team members
 
@@ -34,7 +34,7 @@ A React JS Kanban task-management application with a 3-column board and a live a
 - React + Vite
 - React Router (hash routing for GitHub Pages)
 - Local Storage for persistence
-- Plain CSS (no UI framework)
+- Plain CSS (no UI framework, no TypeScript)
 
 ## Getting started
 

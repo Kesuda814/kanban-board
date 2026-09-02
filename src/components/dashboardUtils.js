@@ -1,19 +1,7 @@
-export interface Stats {
-  total: number
-  todo: number
-  doing: number
-  done: number
-  overdue: number
-  early: number
-  onTime: number
-  late: number
-  perCategory: Record<string, number>
-}
-
-export function computeStats(tasks: any[], categories: any[]): Stats {
+export function computeStats(tasks, categories) {
   const today = new Date().toISOString().slice(0, 10)
   let total = 0, todo = 0, doing = 0, done = 0, overdue = 0, early = 0, onTime = 0, late = 0
-  const perCategory: Record<string, number> = {}
+  const perCategory = {}
   categories.forEach((cat) => { perCategory[cat.name] = 0 })
 
   tasks.forEach((task) => {
