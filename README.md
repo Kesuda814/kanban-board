@@ -70,4 +70,7 @@ npm run deploy
 ## Screenshots
 
 ![Kanban Board](screenshots/kanban-board.png)
+
 ![Dashboard](screenshots/dashboard.png)
+
+![Task management](screenshots/screenshot-extra.png)
