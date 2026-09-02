@@ -1,6 +1,6 @@
 # Kanban Board with Dashboard
 
-A **JavaScript (JSX)** Kanban task-management application with a 3-column board and a live analytics dashboard, backed by Local Storage (no backend). No TypeScript is used.
+A **JavaScript (JSX)** Kanban task-management application with a 3-column board and a live analytics dashboard, backed by Local Storage (no backend).
 
 ## Live demo
 
@@ -34,7 +34,7 @@ A **JavaScript (JSX)** Kanban task-management application with a 3-column board 
 - React + Vite
 - React Router (hash routing for GitHub Pages)
 - Local Storage for persistence
-- Plain CSS (no UI framework, no TypeScript)
+- Plain CSS (no UI framework)
 - ESLint for linting
 
 ## Getting started
