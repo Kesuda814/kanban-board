@@ -35,6 +35,7 @@ A **JavaScript (JSX)** Kanban task-management application with a 3-column board 
 - React Router (hash routing for GitHub Pages)
 - Local Storage for persistence
 - Plain CSS (no UI framework, no TypeScript)
+- ESLint for linting
 
 ## Getting started
 
@@ -50,6 +51,13 @@ npm install
 npm run dev
 
 # 4. Open http://localhost:5173
+```
+
+## Linting
+
+```bash
+npm run lint        # run ESLint
+npm run lint:fix    # run ESLint and auto-fix
 ```
 
 ### Deploy updates to GitHub Pages
