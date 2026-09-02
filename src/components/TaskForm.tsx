@@ -1,158 +1,64 @@
-import React, { useState } from 'react'
-import { Task, Category, ResponsiblePerson } from '../types'
+import { useState, type FormEvent } from 'react'
+import type { Category, ResponsiblePerson, Status, Task } from '../types'
 
-interface TaskFormProps {
+interface Props {
   task: Task | null
-  onSave: (task: Task) => void
-  onCancel: () => void
   categories: Category[]
   persons: ResponsiblePerson[]
-  status: 'TO_DO' | 'DOING' | 'DONE'
+  onSave: (task: Task) => void
+  onCancel: () => void
+  onAddCategory: (name: string) => string | null
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({
-  task,
-  onSave,
-  onCancel,
-  categories,
-  persons,
-  status,
-}) => {
-  const [form, setForm] = useState({
-    title: task?.title || '',
-    description: task?.description || '',
-    categoryId: task?.categoryId || categories[0]?.id || '',
-    startDate: task?.startDate ? new Date(task.startDate) : new Date(),
-    dueDate: task?.dueDate ? new Date(task.dueDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    completeDate: task?.completeDate ? new Date(task.completeDate) : null,
-    responsiblePersonId: task?.responsablePersonId || persons[0]?.id || '',
+const today = () => new Date().toISOString().slice(0, 10)
+const nextWeek = () => new Date(Date.now() + 604800000).toISOString().slice(0, 10)
+
+export default function TaskForm({ task, categories, persons, onSave, onCancel, onAddCategory }: Props) {
+  const [form, setForm] = useState<Task>(() => task || {
+    id: crypto.randomUUID(), title: '', description: '', categoryId: categories[0]?.id || '',
+    startDate: today(), dueDate: nextWeek(), completeDate: '', responsiblePersonId: persons[0]?.id || '', status: 'TO_DO',
+  })
+  const [newCategory, setNewCategory] = useState('')
+
+  const update = (name: keyof Task, value: string) => setForm((current) => {
+    const next = { ...current, [name]: value }
+    if (name === 'status') next.completeDate = value === 'DONE' ? (current.completeDate || today()) : ''
+    return next
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setForm({...form, [name]: value})
+  const submit = (event: FormEvent) => {
+    event.preventDefault()
+    if (!form.title.trim() || !form.categoryId || !form.responsiblePersonId) return
+    onSave({ ...form, title: form.title.trim(), description: form.description.trim() })
   }
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setForm({...form, [name]: new Date(value)})
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const newTask: Task = {
-      id: task?.id || crypto.randomUUID(),
-      title: form.title,
-      description: form.description,
-      categoryId: form.categoryId,
-      startDate: form.startDate,
-      dueDate: form.dueDate,
-      completeDate: form.completeDate,
-      status: status,
-      responsiblePersonId: form.responsablePersonId || null,
-      category: categories.find(c => c.id === form.categoryId) || {id: '', name: 'Uncategorized'},
-      responsiblePerson: persons.find(p => p.id === form.responsablePersonId) || {id: '', name: 'Unassigned'},
+  const createCategory = () => {
+    const id = onAddCategory(newCategory)
+    if (id) {
+      update('categoryId', id)
+      setNewCategory('')
     }
-    onSave(newTask)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium">Title</label>
-        <input
-          name="title"
-          value={form.title}
-          onChange={handleChange}
-          className="w-full rounded border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium">Description</label>
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          className="w-full rounded border border-gray-300 py-3 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          rows={3}
-        ></textarea>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium">Start Date</label>
-          <input
-            type="date"
-            name="startDate"
-            value={form.startDate.toISOString().split('T')[0]}
-            onChange={handleDateChange}
-            className="w-full rounded border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Due Date</label>
-          <input
-            type="date"
-            name="dueDate"
-            value={form.dueDate.toISOString().split('T')[0]}
-            onChange={handleDateChange}
-            className="w-full rounded border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium">Complete Date</label>
-        <input
-          type="date"
-          name="completeDate"
-          value={form.completeDate ? form.completeDate.toISOString().split('T')[0] : ''}
-          onChange={handleDateChange}
-          className="w-full rounded border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={status !== 'DONE'}
-        />
-      </div>
-      <div className="grid grid-cols-3 gap-4">
-        <CategoryManager
-          categories={categories}
-          onAddCategory={(name) => {
-            // Add category logic - will be handled by parent
-          }}
-          onSelectCategory={(categoryId) => {
-            setForm({...form, categoryId})
-          }}
-        />
-        <ResponsiblePersonSelect
-          personId={form.responsiblePersonId}
-          onChange={(id) => setForm({...form, responsiblePersonId: id})}
-          persons={persons}
-        />
-        <select
-          value={form.status}
-          onChange={(e) => setForm({...form, status: e.target.value})}
-          className="w-full rounded border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="TO_DO">TO DO</option>
-          <option value="DOING">DOING</option>
-          <option value="DONE">DONE</option>
-        </select>
-      </div>
-      <div className="flex gap-3">
-        <button
-type="button"
-          onClick={onCancel}
-          className="flex-1 px-4 py-2 rounded border border-gray-300 hover:bg-gray-100"
-        >
-          Cancel
-        </button>
-        <button
-type="submit"
-          className="flex-1 px-4 py-2 rounded border border-blue-500 bg-blue-600 text-white hover:bg-blue-700"
-        >
-          {task ? 'Update' : 'Create'} Task
-        </button>
-      </div>
-    </form>
+    <div className="modal-backdrop" role="presentation" onMouseDown={onCancel}>
+      <section className="modal" role="dialog" aria-modal="true" aria-labelledby="task-form-title" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="modal-head"><div><span className="eyebrow">TASK DETAILS</span><h2 id="task-form-title">{task ? 'Edit task' : 'Create a new task'}</h2></div><button className="icon-button" type="button" onClick={onCancel}>×</button></div>
+        <form onSubmit={submit}>
+          <label>Title<input value={form.title} onChange={(e) => update('title', e.target.value)} placeholder="What needs to be done?" required /></label>
+          <label>Description<textarea value={form.description} onChange={(e) => update('description', e.target.value)} placeholder="Add useful details" rows={3} /></label>
+          <div className="form-grid">
+            <label>Category<select value={form.categoryId} onChange={(e) => update('categoryId', e.target.value)} required><option value="">Select category</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+            <label>Responsible person<select value={form.responsiblePersonId} onChange={(e) => update('responsiblePersonId', e.target.value)} required>{persons.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
+            <label>Start date<input type="date" value={form.startDate} onChange={(e) => update('startDate', e.target.value)} required /></label>
+            <label>Due date<input type="date" min={form.startDate} value={form.dueDate} onChange={(e) => update('dueDate', e.target.value)} required /></label>
+            <label>Status<select value={form.status} onChange={(e) => update('status', e.target.value as Status)}><option value="TO_DO">TO DO</option><option value="DOING">DOING</option><option value="DONE">DONE</option></select></label>
+            {form.status === 'DONE' && <label>Complete date<input type="date" value={form.completeDate} onChange={(e) => update('completeDate', e.target.value)} required /></label>}
+          </div>
+          <div className="new-category"><input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="New category name" /><button type="button" className="secondary" onClick={createCategory}>Add category</button></div>
+          <div className="modal-actions"><button type="button" className="secondary" onClick={onCancel}>Cancel</button><button className="primary" type="submit">{task ? 'Save changes' : 'Create task'}</button></div>
+        </form>
+      </section>
+    </div>
   )
 }
-
-export default TaskForm

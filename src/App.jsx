@@ -1,108 +1,78 @@
-import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { HashRouter, NavLink, Route, Routes } from 'react-router-dom'
 import './App.css'
 import KanbanBoard from './components/KanbanBoard'
 import Dashboard from './pages/Dashboard'
 
-// Sample data for responsible persons (as per project spec)
-const SAMPLE_PERSONS = [
-  {id: '1', name: 'Alice Johnson'},
-  {id: '2', name: 'Bob Smith'},
-  {id: '3', name: 'Carol Davis'},
-  {id: '4', name: 'Dave Wilson'},
-  {id: '5', name: 'Eve Taylor'},
+const PEOPLE = [
+  { id: 'p1', name: 'Kesuda' },
+  { id: 'p2', name: 'Thwe Hnin Eain' },
+  { id: 'p3', name: 'Hein Nyan Swen' },
+]
+const DEFAULT_CATEGORIES = [
+  { id: 'development', name: 'Development' },
+  { id: 'design', name: 'Design' },
+  { id: 'research', name: 'Research' },
 ]
 
+const readStorage = (key, fallback) => {
+  try {
+    const value = localStorage.getItem(key)
+    return value ? JSON.parse(value) : fallback
+  } catch {
+    return fallback
+  }
+}
+
 function App() {
-  const [tasks, setTasks] = useState([])
-  const [categories, setCategories] = useState([])
-  const [persons, setPersons] = useState(SAMPLE_PERSONS)
+  const [tasks, setTasks] = useState(() => readStorage('kanban-tasks', []))
+  const [categories, setCategories] = useState(() => readStorage('kanban-categories', DEFAULT_CATEGORIES))
 
-  // Initialize from LocalStorage or set defaults
-  useEffect(() => {
-    const storedTasks = localStorage.getItem('kanban-tasks')
-    const storedCategories = localStorage.getItem('kanban-categories')
-    
-    if (storedTasks) {
-      setTasks(JSON.parse(storedTasks))
+  useEffect(() => localStorage.setItem('kanban-tasks', JSON.stringify(tasks)), [tasks])
+  useEffect(() => localStorage.setItem('kanban-categories', JSON.stringify(categories)), [categories])
+
+  const saveTask = (task) => setTasks((current) => {
+    const exists = current.some((item) => item.id === task.id)
+    return exists ? current.map((item) => item.id === task.id ? task : item) : [...current, task]
+  })
+
+  const moveTask = (id, status) => setTasks((current) => current.map((task) => {
+    if (task.id !== id) return task
+    return {
+      ...task,
+      status,
+      completeDate: status === 'DONE' ? (task.completeDate || new Date().toISOString().slice(0, 10)) : '',
     }
-    
-    if (storedCategories) {
-      setCategories(JSON.parse(storedCategories))
-    } else {
-      // Set default categories if none exist
-      setCategories([
-        {id: 'work', name: 'Work'},
-        {id: 'personal', name: 'Personal'},
-        {id: 'urgent', name: 'Urgent'},
-        {id: 'study', name: 'Study'},
-      ])
-      localStorage.setItem('kanban-categories', JSON.stringify([
-        {id: 'work', name: 'Work'},
-        {id: 'personal', name: 'Personal'},
-        {id: 'urgent', name: 'Urgent'},
-        {id: 'study', name: 'Study'},
-      ]))
-    }
-    
-    // Ensure persons are stored
-    localStorage.setItem('kanban-persons', JSON.stringify(SAMPLE_PERSONS))
-  }, [])
+  }))
 
-  // Save to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('kanban-tasks', JSON.stringify(tasks))
-  }, [tasks])
-
-  const addTask = (task) => {
-    setTasks([...tasks, task])
-  }
-
-  const updateTask = (task) => {
-    setTasks(tasks.map((t) => t.id === task.id ? task : t))
-  }
-
-  const deleteTask = (taskId) => {
-    setTasks(tasks.filter((t) => t.id !== taskId))
-  }
-
-  const moveTask = (taskId, newStatus) => {
-    const task = tasks.find((t) => t.id === taskId)
-    if (task) {
-      const updatedTask = {...task, status: newStatus}
-      // If moving to DONE, set complete date if not already set
-      if (newStatus === 'DONE' && !task.completeDate) {
-        updatedTask = {...updatedTask, completeDate: new Date().toISOString()}
-      }
-      setTasks(tasks.map((t) => t.id === taskId ? updatedTask : t))
-    }
-  }
-
-  const handleCategoryAdd = (name) => {
-    const newCategory = {id: crypto.randomUUID(), name}
-    setCategories([...categories, newCategory])
+  const addCategory = (name) => {
+    const cleanName = name.trim()
+    if (!cleanName) return null
+    const existing = categories.find((item) => item.name.toLowerCase() === cleanName.toLowerCase())
+    if (existing) return existing.id
+    const category = { id: crypto.randomUUID(), name: cleanName }
+    setCategories((current) => [...current, category])
+    return category.id
   }
 
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white border-b border-gray-200 p-4 shadow-sm">
-          <div className="max-w-7xl mx-auto flex items-center space-x-6">
-            <Link to="/" className="text-xl font-semibold text-blue-600">Kanban Board</Link>
-            <div className="hidden md:flex items-center space-x-8">
-              <Link to="/dashboard" className="text-medium hover:text-gray-600">Dashboard</Link>
-            </div>
-          </div>
-        </nav>
-
-        <div className="max-w-7xl mx-auto px-4 py-6">
+    <HashRouter>
+      <div className="app-shell">
+        <header className="topbar">
+          <NavLink to="/" className="brand"><span>✓</span> TaskFlow</NavLink>
+          <nav>
+            <NavLink to="/" end>Kanban Board</NavLink>
+            <NavLink to="/dashboard">Dashboard</NavLink>
+          </nav>
+        </header>
+        <main className="page">
           <Routes>
-            <Route path="/" element={<KanbanBoard tasks={tasks} categories={categories} persons={persons} />} />
+            <Route path="/" element={<KanbanBoard tasks={tasks} categories={categories} persons={PEOPLE} onSaveTask={saveTask} onDeleteTask={(id) => setTasks((items) => items.filter((task) => task.id !== id))} onMoveTask={moveTask} onAddCategory={addCategory} />} />
             <Route path="/dashboard" element={<Dashboard tasks={tasks} categories={categories} />} />
           </Routes>
-        </div>
+        </main>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 

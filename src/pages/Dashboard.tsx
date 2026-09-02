@@ -1,167 +1,42 @@
-import React from 'react'
-import { Bar } from 'react-chartjs-2'
+import type { Category, Task } from '../types'
+import { computeStats } from '../components/dashboardUtils'
 
-interface DashboardProps {
-  tasks: any[]
-  categories: any[]
+interface Props {
+  tasks: Task[]
+  categories: Category[]
 }
 
-const Dashboard: React.FC<DashboardProps> = ({tasks, categories}) => {
-  // Calculate summary stats
-  const totalTasks = tasks.length
-  const todoCount = tasks.filter((t: any) => t.status === 'TO_DO').length
-  const doingCount = tasks.filter((t: any) => t.status === 'DOING').length
-  const doneCount = tasks.filter((t: any) => t.status === 'DONE').length
+const cards = [
+  { key: 'total', label: 'Total tasks', color: 'navy' },
+  { key: 'todo', label: 'TO DO', color: 'red' },
+  { key: 'doing', label: 'DOING', color: 'blue' },
+  { key: 'done', label: 'DONE', color: 'green' },
+  { key: 'overdue', label: 'Overdue', color: 'amber' },
+]
 
-  // Calculate overdue tasks
-  const now = new Date()
-  const overdueCount = tasks.filter((t: any) => {
-    const dueDate = new Date(t.dueDate)
-    return t.status !== 'DONE' && dueDate < now
-  }).length
+const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899']
 
-  // Task status distribution
-  const statusCounts = {
-    TO_DO: todoCount,
-    DOING: doingCount,
-    DONE: doneCount,
-  }
+export default function Dashboard({ tasks, categories }: Props) {
+  const stats = computeStats(tasks, categories)
+  const rating = stats.total ? Math.round(((stats.early + stats.onTime) / (stats.early + stats.onTime + stats.late)) * 100) : 0
 
-  // Task category distribution
-  const categoryCounts: Record<string, number> = {}
-  categories.forEach((cat: any) => {
-    categoryCounts[cat.name] = 0
-  })
-  tasks.forEach((t: any) => {
-    const cat = categories.find((c: any) => c.id === t.categoryId)
-    if (cat) {
-      categoryCounts[cat.name] = (categoryCounts[cat.name] || 0) + 1
-    }
-  })
-
-  // Completion performance
-  const earlyCount = tasks.filter((t: any) => {
-    if (t.status !== 'DONE' || !t.completeDate || !t.dueDate) return false
-    const complete = new Date(t.completeDate)
-    const due = new Date(t.dueDate)
-    return complete < due
-  }).length
-
-  const onTimeCount = tasks.filter((t: any) => {
-    if (t.status !== 'DONE' || !t.completeDate || !t.dueDate) return false
-    const complete = new Date(t.completeDate)
-    const due = new Date(t.dueDate)
-    return complete >= due && complete <= now
-  }).length
-
-  const lateCount = tasks.filter((t: any) => {
-    if (t.status !== 'DONE' || !t.completeDate || !t.dueDate) return false
-    const complete = new Date(t.completeDate)
-    const due = new Date(t.dueDate)
-    return complete > now
-  }).length
-
-  // Chart data for status (Pie chart)
-  const statusChartData = {
-    labels: ['TO_DO', 'DOING', 'DONE'],
-    datasets: [
-      {
-        data: [todoCount, doingCount, doneCount],
-        backgroundColor: ['#ef4444', '#3b82f6', '#22c55e'],
-      },
-    ],
-  }
-
-  // Chart data for categories (Bar chart)
-  const categoryChartData = {
-    labels: Object.keys(categoryCounts),
-    datasets: [
-      {
-        label: 'Tasks per Category',
-        data: Object.values(categoryCounts),
-        backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
-      },
-    ],
-  }
-
-  // Chart data for completion performance (Pie chart)
-  const performanceChartData = {
-    labels: ['Early', 'On Time', 'Late'],
-    datasets: [
-      {
-        data: [earlyCount, onTimeCount, lateCount],
-        backgroundColor: ['#3b82f6', '#10b981', '#ef4444'],
-      },
-    ],
-  }
+  const categoryEntries = Object.entries(stats.perCategory)
+  const maxCategory = Math.max(1, ...categoryEntries.map((entry) => entry[1]))
 
   return (
-    <div className="p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Total Tasks Card */}
-        <div className="rounded-lg bg-white p-4 shadow shadow-sm">
-          <div className="text-2xl font-bold text-gray-900">{totalTasks}</div>
-          <div className="text-sm text-gray-500">Total Tasks</div>
-        </div>
-        {/* TO DO Card */}
-        <div className="rounded-lg bg-white p-4 shadow shadow-sm">
-          <div className="text-2xl font-bold text-gray-900 text-red-600">{todoCount}</div>
-          <div className="text-sm text-gray-500">TO DO</div>
-        </div>
-        {/* DOING Card */}
-        <div className="rounded-lg bg-white p-4 shadow shadow-sm">
-          <div className="text-2xl font-bold text-gray-900 text-blue-600">{doingCount}</div>
-          <div className="text-sm text-gray-500">DOING</div>
-        </div>
-        {/* DONE Card */}
-        <div className="rounded-lg bg-white p-4 shadow shadow-sm">
-          <div className="text-2xl font-bold text-gray-900 text-green-600">{doneCount}</div>
-          <div className="text-sm text-gray-500">DONE</div>
-        </div>
-        {/* Overdue Card */}
-        <div className="rounded-lg bg-white p-4 shadow shadow-sm" style={{borderLeft: '4px solid #ef4444'}}
-        >
-          <div className="text-2xl font-bold text-gray-900 text-red-600">{overdueCount}</div>
-          <div className="text-sm text-gray-500">Overdue</div>
-        </div>
+    <div className="dashboard">
+      <div className="page-head"><div><span className="eyebrow">PROJECT 1 · GROUP 3</span><h1>Dashboard</h1><p className="subtitle">Live summary of all tasks on the board.</p></div></div>
+      <div className="stat-grid">
+        {cards.map((card) => {
+          const value = stats[card.key] as number
+          return <div className={`stat-card ${card.color}`} key={card.key}><span className="stat-value">{value}</span><span className="stat-label">{card.label}</span></div>
+        })}
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Status Chart - Pie */}
-        <div>
-          <h3 className="text-semibold mb-4">Task Status Distribution</h3>
-          <Bar
-            width={400}
-            height={400}
-            data={statusChartData}
-            options={{responsive: true}}
-          />
-        </div>
-
-        {/* Category Chart - Bar */}
-        <div>
-          <h3 className="text-semibold mb-4">Tasks by Category</h3>
-          <Bar
-            width={400}
-            height={400}
-            data={categoryChartData}
-            options={{responsive: true}}
-          />
-        </div>
-
-        {/* Completion Performance - Pie */}
-        <div>
-          <h3 className="text-semibold mb-4">Completion Performance</h3>
-          <Bar
-            width={400}
-            height={400}
-            data={performanceChartData}
-            options={{responsive: true}}
-          />
-        </div>
+      <div className="dash-grid">
+        <section className="card"><div className="card-title"><h2>Tasks by status</h2><span className="badge">Overview</span></div><div className="segmented">{[{ status: 'TO_DO', label: 'TO DO', value: stats.todo, color: '#ef4444' }, { status: 'DOING', label: 'DOING', value: stats.doing, color: '#3b82f6' }, { status: 'DONE', label: 'DONE', value: stats.done, color: '#10b981' }].map((item) => <div className="seg-col" key={item.status}><span className="seg-bar" style={{ height: stats.total ? `${Math.round((item.value / stats.total) * 100)}%` : '2%', background: item.color }} /><span className="seg-label">{item.label}</span><strong>{item.value}</strong></div>)}</div></section>
+        <section className="card"><div className="card-title"><h2>Tasks by category</h2><span className="badge">{categoryEntries.length} categories</span></div>{categoryEntries.length ? <div className="bar-list">{categoryEntries.map(([name, count], index) => <div className="bar-row" key={name}><span className="bar-name">{name}</span><div className="track"><div className="fill" style={{ width: `${Math.round((count / maxCategory) * 100)}%`, background: COLORS[index % COLORS.length] }} /></div><strong>{count}</strong></div>)}</div> : <p className="muted">No categories with tasks yet.</p>}</section>
+        <section className="card"><div className="card-title"><h2>Completion performance</h2><span className="badge">DONE only</span></div><div className="donut-wrap"><div className="donut" style={{ '--done': `${(stats.early + stats.onTime + stats.late) ? `${Math.round(((stats.early + stats.onTime) / (stats.early + stats.onTime + stats.late)) * 100)}%` : '0%'}` } as CSSProperties}><div className="donut-inner"><strong>{stats.total ? `${rating}%` : '—'}</strong><span>on time</span></div></div><div className="legend"><div className="legend-row"><span className="dot early" /><span>Early</span><strong>{stats.early}</strong></div><div className="legend-row"><span className="dot ontime" /><span>On time</span><strong>{stats.onTime}</strong></div><div className="legend-row"><span className="dot late" /><span>Late</span><strong>{stats.late}</strong></div></div></div></section>
       </div>
     </div>
   )
 }
-
-export default Dashboard

@@ -1,3 +1,5 @@
+export type Status = 'TO_DO' | 'DOING' | 'DONE'
+
 export interface ResponsiblePerson {
   id: string
   name: string
@@ -13,17 +15,17 @@ export interface Task {
   title: string
   description: string
   categoryId: string
-  startDate: Date
-  dueDate: Date
-  completeDate: Date | null
-  status: 'TO_DO' | 'DOING' | 'DONE'
-  responsiblePersonId: string | null
-  category: Category
-  responsiblePerson: ResponsiblePerson
+  startDate: string
+  dueDate: string
+  completeDate: string
+  responsiblePersonId: string
+  status: Status
 }
 
-export const CATEGORIES_INITIAL: Category[] = []
+export const STATUSES: Status[] = ['TO_DO', 'DOING', 'DONE']
+export const STATUS_LABELS: Record<Status, string> = {
+  TO_DO: 'TO DO',
+  DOING: 'DOING',
+  DONE: 'DONE',
+}
 
-export const TASKS_INITIAL: Task[] = []
-
-export const STATUSES = ['TO_DO', 'DOING', 'DONE'] as const

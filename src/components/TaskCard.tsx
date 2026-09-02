@@ -1,61 +1,28 @@
-import React from 'react'
-import { Task, Category } from '../types'
+import type { Category, ResponsiblePerson, Status, Task } from '../types'
+import { STATUS_LABELS } from '../types'
 
-interface TaskCardProps {
+interface Props {
   task: Task
-  onMove: (newStatus: 'TO_DO' | 'DOING' | 'DONE') => void
-  onDelete: (taskId: string) => void
-  onEdit: (task: Task) => void
   categories: Category[]
   persons: ResponsiblePerson[]
+  onMove: (status: Status) => void
+  onEdit: () => void
+  onDelete: () => void
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({
-  task,
-  onMove,
-  onDelete,
-  onEdit,
-  categories,
-  persons,
-}) => {
-  const category = categories.find(c => c.id === task.categoryId) || {id: '', name: 'Uncategorized'}
-  const person = persons.find(p => p.id === task.responsiblePersonId) || {id: '', name: 'Unassigned'}
-  const statusClass = {
-    'TO_DO': 'bg-gray-100',
-    'DOING': 'bg-blue-100',
-    'DONE': 'bg-green-100',
-  }[task.status]
-
-  const formatDate = (date: Date | null | undefined) => {
-    if (!date) return 'N/A'
-    return new Date(date).toLocaleDateString()
-  }
+export default function TaskCard({ task, categories, persons, onMove, onEdit, onDelete }: Props) {
+  const category = categories.find((item) => item.id === task.categoryId)?.name || 'Uncategorized'
+  const person = persons.find((item) => item.id === task.responsiblePersonId)?.name || 'Unassigned'
+  const overdue = task.status !== 'DONE' && task.dueDate < new Date().toISOString().slice(0, 10)
+  const initials = person.split(' ').map((word) => word[0]).join('').slice(0, 2)
 
   return (
-    <div
-      className={
-        `rounded border p-4 mb-2 ${statusClass} transition-colors duration-300`
-      }
-    >
-      <h3 className="font-medium mb-2">{task.title}</h3>
-      <p className="text-sm text-gray-600 line-clamp-2">{task.description}</p>
-      <div className="flex flex-col space-y-1 text-xs">
-        <div className="flex justify-between">
-          <span>Category: {category.name}</span>
-          <span>Due: {formatDate(task.dueDate)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Start: {formatDate(task.startDate)}</span>
-          <span>Complete: {formatDate(task.completeDate)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Assigned: {person.name}</span>
-          <span>Status: {task.status}</span>
-        </div>
-      </div>
-      <div className="flex gap-2 mt-3" />
-    </div>
+    <article className="task-card" draggable onDragStart={(e) => e.dataTransfer.setData('text/plain', task.id)}>
+      <div className="card-top"><span className="category-pill">{category}</span><div className="card-actions"><button onClick={onEdit} aria-label="Edit task">✎</button><button onClick={() => { if (confirm('Delete this task?')) onDelete() }} aria-label="Delete task">×</button></div></div>
+      <h3>{task.title}</h3>
+      {task.description && <p>{task.description}</p>}
+      <div className={`date-row ${overdue ? 'overdue' : ''}`}><span>◷</span><span>{overdue ? 'Overdue · ' : 'Due · '}{new Date(`${task.dueDate}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span></div>
+      <div className="card-footer"><span className="avatar" title={person}>{initials}</span><select aria-label={`Move ${task.title}`} value={task.status} onChange={(e) => onMove(e.target.value as Status)}>{(['TO_DO', 'DOING', 'DONE'] as Status[]).map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}</select></div>
+    </article>
   )
 }
-
-export default TaskCard

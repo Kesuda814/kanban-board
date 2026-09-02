@@ -1,54 +1,25 @@
-import React from 'react'
-import { Task } from '../types'
+import type { Category, ResponsiblePerson, Status, Task } from '../types'
+import { STATUS_LABELS } from '../types'
 import TaskCard from './TaskCard'
 
-interface KanbanColumnProps {
-  status: 'TO_DO' | 'DOING' | 'DONE'
+interface Props {
+  status: Status
   tasks: Task[]
-  onMoveTask: (taskId: string, newStatus: 'TO_DO' | 'DOING' | 'DONE') => void
-  onDeleteTask: (taskId: string) => void
+  categories: Category[]
+  persons: ResponsiblePerson[]
+  onMoveTask: (id: string, status: Status) => void
+  onDeleteTask: (id: string) => void
   onEditTask: (task: Task) => void
-  categories: any[]
-  persons: any[]
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({
-  status,
-  tasks,
-  onMoveTask,
-  onDeleteTask,
-  onEditTask,
-  categories,
-  persons,
-}) => {
+export default function KanbanColumn({ status, tasks, categories, persons, onMoveTask, onDeleteTask, onEditTask }: Props) {
   return (
-    <div className="space-y-4">
-      <div
-        className={
-          `border rounded-t header bg-gray-200 text-gray-700 px-3 py-2 font-medium`
-        }
-      >
-        {status}
+    <section className={`kanban-column ${status.toLowerCase()}`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { const id = e.dataTransfer.getData('text/plain'); if (id) onMoveTask(id, status) }}>
+      <div className="column-head"><div><span className="status-dot" /><h2>{STATUS_LABELS[status]}</h2></div><span className="count">{tasks.length}</span></div>
+      <div className="card-list">
+        {tasks.map((task) => <TaskCard key={task.id} task={task} categories={categories} persons={persons} onMove={(next) => onMoveTask(task.id, next)} onDelete={() => onDeleteTask(task.id)} onEdit={() => onEditTask(task)} />)}
+        {!tasks.length && <div className="empty-column">Drop tasks here</div>}
       </div>
-      {tasks.length === 0 ? (
-        <p className="text-center text-gray-500 py-8">No tasks</p>
-      ) : (
-        <div className="space-y-2">
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onMove={(newStatus) => onMoveTask(task.id, newStatus)}
-              onDelete={() => onDeleteTask(task.id)}
-              onEdit={(task) => onEditTask(task)}
-              categories={categories}
-              persons={persons}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+    </section>
   )
 }
-
-export default KanbanColumn
