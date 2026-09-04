@@ -25,9 +25,9 @@ A **JavaScript (JSX)** Kanban task-management application with a 3-column board 
 
 ## Team members
 
-- Kesuda
-- Thwe Hnin Eain
-- Hein Nyan Swen
+- Kesuda - 6736640
+- Thwe Hnin Eain - 6736673
+- Hein Nyan Swen - 6732096
 
 ## Technologies
 
